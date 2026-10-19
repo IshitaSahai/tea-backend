@@ -17,6 +17,7 @@ const connectDB=async()=>{//as db is in another continent so we need async await
 export default connectDB//exporting the db connection 
 
 // using exit() method of process object:
-//     usecase: It is used if you want to terminate the execution completely regardless of any async operation an all.
+//     usecase: It is used if you want to terminate the execution completely regardless of any async operation at all.
 //     default value exit(0)  which indicate exit successfully without any interption.
 //     any non zero value  like exit(1) indicates process exit intentionaly.
+
