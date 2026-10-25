@@ -1,6 +1,6 @@
-//CODE IN THE FORM OF THE PROMISES:-
-const asyncHandler=(requestHandler)=>{
-    (req,res,next)=>{
+//CODE IN THE FORM OF THE PROMISES:-via this we won't hv to put everyhting inside the promises/try,catch
+const asyncHandler=(requestHandler)=>{//we need to return a function here so we're returning the function only:-
+    return (req,res,next)=>{
         Promise.resolve(requestHandler(req,res,next))//executing the fn taken as a parameter
         .reject((err)=>next(err))//moving to the next function if the error comes 
     }

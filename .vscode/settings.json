@@ -3,5 +3,6 @@
     "javascript.updateImportsOnFileMove.enabled": "never",
     "python.analysis.autoImportCompletions": false,
     "python.analysis.autoSearchPaths": false,
-    "python.analysis.fixAll": []
+    "python.analysis.fixAll": [],
+    "python.terminal.useEnvFile": true
 }

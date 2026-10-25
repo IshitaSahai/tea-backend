@@ -31,6 +31,21 @@ app.use(express.static("public"))//public is a folder in which we're storing the
 app.use(cookieParser())
 
 
+
+//routes:- this segregation of files is done intentionally we could've done this at the top as well but it's not how we do it
+import userRouter from "./routes/user.routes.js"
+//we may hv the thinking that we'll make the url in such a way that wherever our application is running ie. localhost:8000/registerUser, we'll be calling the method registerUser there but it's not how it's done, we follow some good practices whenever we declare routes:-
+
+//routes declaration:-we usually used to do app.get here but we used to do it when we weren't exporting the router like the way we've done rn, we were writing like that coz we were declaring the routes and writing the controllers here in the same file only but now we've separated the routes and written them in the different file so now we need to bring in the middlewares in order to bring router:-
+app.use("/api/v1/user",userRouter)///userRouter will take the control to the user.routes file and then it'll be asking that what we need to there and to which file do we need to take the user
+
+//this /user will become the prefix and the url will become:-http://localhost:8000/api.v1/user/register
+//we don't need to do the import again n again once we've made the app.use then if we wanna make the login method then we can make that as well, there'll be no change in the app.js and we'll automatically get the login in place of register:-
+// http://localhost:8000/api.v1/user/login
+
+
+
+
 export {app}//we can also export it using export default app 
 
 //whenever any asynchronous db gets connected, it also returns a promise, and we've written an asynchronous method ie. conneDB, so it also returns a promise so we can keep .then and .catch in the index.js file now 
