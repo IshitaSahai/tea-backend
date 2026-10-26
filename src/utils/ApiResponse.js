@@ -8,3 +8,6 @@ const ApiResponse={
 }
 
 //statuscodes are tof servers:- in order to read more:-https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
+
+
+export {ApiResponse}

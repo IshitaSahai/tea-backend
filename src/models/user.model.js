@@ -57,7 +57,7 @@ userSchema.pre("save",async function(next){//encryption n all is a time taking p
     if(!this.isModified("password")) return next()
 
     //bcrypt does a lot of work behind the scenes 
-    this.password=bcrypt.hash(this.password,10)//takes 2 parameters:- what to hash and how many rounds of hashing rounds to take 
+    this.password=await bcrypt.hash(this.password,10)//takes 2 parameters:- what to hash and how many rounds of hashing rounds to take 
     next()//we need to make sure that it runs only when there's a modification in the password field and if there's no change in the password and only the other fields have changed then there's no need to do the encryption  
 
 })//these hooks are similar to app.listen, app.on(error)
