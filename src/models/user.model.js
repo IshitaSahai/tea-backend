@@ -1,7 +1,6 @@
 import mongoose, {Schema} from "mongoose";//we're importing shema as well so that we can use the schema directly instead of doing mongoose.schema everytime
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-import { use } from "react";
 
 const userSchema=new Schema({
     username:{
@@ -27,7 +26,7 @@ const userSchema=new Schema({
         trim:true,
         index:true,
     },
-    avtar:{
+    avatar:{
         type:String,//we'll be using the cloudnary url:- it's an aws service where we upload the images, files and videos and it gives us the url 
         required:true,
     },
@@ -52,13 +51,13 @@ const userSchema=new Schema({
 //password and token things explanation:-
 //now after importing both bcrypt and jsonwebtoken we need to see how to encrypt everything:- direct encryptinon isn't possible so we take the help of the hooks n all pf mongoose (https://mongoosejs.com/docs/middleware.html#pre)
 //pre hook:-if any uer has written any call/controller to save any data then just before that we can make this hook run ie. it helps to encrypt 
-userSchema.pre("save",async function(next){//encryption n all is a time taking process so we should use async await and as it's a middleware so we must use next:-  
+userSchema.pre("save",async function(){//encryption n all is a time taking process so we should use async await and as it's a middleware so we must use next:-  
     //the work that we wanna do is that whenever our all fields r getting saved take the password from it and save it by encrypting
-    if(!this.isModified("password")) return next()
+    if(!this.isModified("password")) return;
 
     //bcrypt does a lot of work behind the scenes 
-    this.password=await bcrypt.hash(this.password,10)//takes 2 parameters:- what to hash and how many rounds of hashing rounds to take 
-    next()//we need to make sure that it runs only when there's a modification in the password field and if there's no change in the password and only the other fields have changed then there's no need to do the encryption  
+    this.password=await bcrypt.hash(this.password,10);//takes 2 parameters:- what to hash and how many rounds of hashing rounds to take 
+    //we need to make sure that it runs only when there's a modification in the password field and if there's no change in the password and only the other fields have changed then there's no need to do the encryption  
 
 })//these hooks are similar to app.listen, app.on(error)
 

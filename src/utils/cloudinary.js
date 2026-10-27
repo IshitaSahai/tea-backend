@@ -21,7 +21,7 @@ import fs from "fs"//it's the file system, in node we get a file system, and we 
 //there can be problems in these file tasks so we need to wrap them in the try catch or something 
 
     // Upload an image
-     const uploadOnCloundinary = async(localFilePath)=>{//if we've got the localfilepath
+     const uploadOnCloudinary = async(localFilePath)=>{//if we've got the localfilepath
         try {
             if(!localFilePath) return null//if we dont't hv path of file that we've on our local server then we'll return null otherwise we'll upload the file:-
             //upload the file on cloudinary if the path exists:-
@@ -30,7 +30,10 @@ import fs from "fs"//it's the file system, in node we get a file system, and we 
             }
         )//we can also give many other options for upload 
         //file has been uploaded successfully :-
-        console.log("file has been uploaded successfully on cloudinary", response.url)//the public url after getting uploaded
+        //console.log("file has been uploaded successfully on cloudinary", response.url)//the public url after getting uploaded
+
+        //unlinking the file as it's been uploaded on the cloudinary 
+        fs.unlinkSync(localFilePath)
         return response//user gets a complete response and can take any data that they want from it 
         //if the file hasn't been uploaded/mistake in path:-
         } catch (error) {//2 cases:-if the file hasn't been uploaded successfully or there's any mistake in the localfilepath
@@ -39,4 +42,4 @@ import fs from "fs"//it's the file system, in node we get a file system, and we 
            return null//just for the sake that the method returns properly 
         }
     }  
-export {uploadOnCloundinary}
+export {uploadOnCloudinary}

@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js"
 import { User } from "../models/user.model.js";
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
-import ApiResponse from '../utils/ApiResponse.js'
+import {ApiResponse} from '../utils/ApiResponse.js'
 import e from "express";
 //async handler is a higher order function that accepts a function
 const registerUser=asyncHandler(async(req,res)=>{
@@ -23,7 +23,7 @@ const registerUser=asyncHandler(async(req,res)=>{
     //9. if user created then return response else send the error
 
     const {fullname,username,email,password}=req.body//if the data may come from the form or the json then we'll get it in req.body otherwise if it's coming from url then we need to handle it differently
-    console.log("email",email)//as we haven't closed this request in the response so the request will get stuck at the postman while we're trying to test it
+    //console.log("email",email)//as we haven't closed this request in the response so the request will get stuck at the postman while we're trying to test it
 
     //validation:-
     // if(fullname===""){//apierror accepts the satuscode as well as the message 
@@ -41,8 +41,8 @@ const registerUser=asyncHandler(async(req,res)=>{
 
     //to check if user already exisits or not we need to import user from the usermodel file and that user can directly contact with the db as it's created with mongoose and the user will call mongodb on our behalf any no of times we want:-
 
-//we're asking the user to find the 1st user in the db that matches the email/username that the user has enterd:- if we find any one of the email/username same we'll send an error to the user that the email/username already exists then we'll give the error to the user that it already exists:-
- const existedUser= User.findOne({
+//we're asking the user to find the 1st user in the db that matches the email/username that the user has enterd:- if we find any one of the email/username same  we'll send an error to the user that the email/username already exists then we'll give the error to the user that it already exists:-
+ const existedUser= await User.findOne({
     //operators an be used:-
     $or:[{username},{email}]//it checks all the values together that're needed to be checked  
 })
@@ -53,7 +53,15 @@ if(existedUser){
 
 //the whole data comes in the req.body but as we've passed a middlleware in the routes, so we get the access to some more fields in the req.body as the middleware adds those fields in the routes
 const avatarLocalPath=req.files?.avatar[0]?.path//the entire path of the file that multer has uploaded will be in this //we'll get the object of the 1st property via this
-const coverImageLocalPath=req.files?.coverImage[0]?.path
+// const coverImageLocalPath=req.files?.coverImage[0]?.path
+
+
+let coverImageLocalPath;//checking it properly as there may be issues if we use the ? optional syntax as in that case we're surely expecting that there will be surely the coverimage array inside of the file and considering that we're directly taking its path without checking if it's surely available or not:-
+
+if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length>0){//checking if coverimage is an array or not and if it's then its length is ?0 or not
+    coverImageLocalPath=req.files.coverImage[0].path
+}
+
 
 if(!avatarLocalPath){
     throw new ApiError(400,"avatar file is required")
@@ -72,7 +80,9 @@ if(!avatar){
 
 
 //now if the avatar has been successfully uploaded on the cloudinary so upload it in the db:-user is the one who's talking to the db:-
+
 const user=await User.create({
+    //these are the keys that're to be added in the postman as well while testing 
     fullname,
     avatar: avatar.url,//sending only the url of the object that we're storing in the db
     coverImage:coverImage?.url || "",

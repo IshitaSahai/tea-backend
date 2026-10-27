@@ -8,7 +8,7 @@ import { app } from "./app.js";
 import connectDB from "./db/index.js";
 
 dotenv.config({
-    path: './env'
+    path: './.env'
 })
 
 connectDB()//till this point only the mongodb databse has been connected but the application hasn't started listening by using the db , so we'll make the app to listen in the then block so that the server can get started 
