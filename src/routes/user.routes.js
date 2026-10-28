@@ -36,7 +36,7 @@ router.route("/login").post(loginUser)
 router.route("/logout").post(verifyJWT,logoutUser)
 
 //we're making the endpoint of the refresh token here:-
-router.route("/refresh-token").post(refreshAccessToken)//as we've done all the decode token work in the controller so we don't need this verifyJWT MIDDLEWARE 
+router.route("/refresh-token").post(refreshToken)//as we've done all the decode token work in the controller so we don't need this verifyJWT MIDDLEWARE 
 
 
 

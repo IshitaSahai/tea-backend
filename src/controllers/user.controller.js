@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import {ApiResponse} from '../utils/ApiResponse.js'
 import jwt from "jsonwebtoken";
+import { use } from "react";
 
 
 //method to generate access and refresh tokens:-
@@ -296,9 +297,138 @@ const refreshAccessToken=asyncHandler(async(req,res)=>{
 })  
 
 
+const changeCurrentPassword=asyncHandler(async(req,res)=>{
+    //WE WANNA MAKE THE USER TO CHANGE CURRENT PASSWORD VIA THIS:-
+    //our headache isn't to check if the user is loggedin or not as we've the middleware verifyjwt via which we'll check it for us when we'll be making the route:-
+    const {oldPassword,newPassword}=req.body//user needs to enter the old password in order to change it to the new one 
+    //finding the old user as we'll need the user to verify the password by going in the user's password field:-
+    //if the user is able to change their password it means that the user is logged in and if the user is logged in they may hv gone via the auth middleware during logging in and the auth middleware does the work of storing user in the req.user so we can get user id from there:-
+    const user=await User.findById(req.user?._id)
+    //checking the password is correct or not:-
+    const isPasswordCorrect=await user.isPasswordCorrect(oldPassword)
+    if(!isPasswordCorrect){
+        throw new ApiError(400,"invalid old password")
+    }
+    //if the old password is correct:-
+    user.password=newPassword
+    //saving password in order to call the hook:-
+    await user.save({validateBeforeSave:false})
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,{},"password changed successfully"))
+})
+
+
+//we need to make an endpoint to get the current user:-
+//it's a simple task as if the user is logged in then we can directly get the access of the user as req.user=user in the middleware that has been inserted:-
+const getCurrentUser=asyncHandler(async(req,res)=>{
+    return res
+    .status(200)
+    .json(200,res.user,"current user fetched successfully")
+})
+
+
+//we're allowing the password to get updated as there's usually a separate page for the password and we can change it as per the no of times we're allowing to change the password
+//it's the same as we can't change the username any no of times in some use cases so we need to allow all the changes at the backend as per our use case
+
+const updatetAccountDetails=asyncHandler(async(req,res)=>{
+    const {fullname,email}=req.body
+    //ADVICE:- IF ANY FILE IS TO BE UPDATED THEN ITS ENDPOINTS SHOULD BE KEPT DIFFERENTLY AS IT'S A BETTER APPROACH AS IF THE USER ONLY WANTS TO UPDATE THEIR IMAGE THEN THEY CAN DO ONLY THAT, WE CAN GIVE THE IMAGE UPDATE AND SAVE OPTION TO THE USER DIRECTLY THERE ONLY 
+    //IF WE SAVE THE WHOLE OF THE ACCOUNT DATA AGAIN THEN THE TEXT DATA GOES AGAIN N AGAIN SO THE CONGESTION IN THE NETWORK GETS INCREASED
+    if(!fullname || !email){
+        throw new ApiError(400,"all fields are required")
+    }
+
+    //sending the info to update both the email and username:-
+    const user=User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                fullname,
+                // email:email,
+                email,//we can use only 1 value instead of key val pair if our both the values r same like above
+            }
+        },
+        {new:true}//via this parameter, the upadted info will be returned
+    ).select("-password")//in case of changing the password, we just took the filed and updated it and then ran .save method as we were also needed to call the hook there but here, we don't need to call any hook so we can directly use the findByIdAndUpdate method
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,user,"account details updated successfully"))
+
+})
+
+
+//updating files:-we need to use 1. multer middleware to accept the files, and 2. auth middleware in order to check if user is logged in as only the logged in users can update the files, so we'll need to take care of this while doing routing:-
+const updateUserAvatar=asyncHandler(async(req,res)=>{
+    const avatarLocalPath=req.file?.path//as we need only one file here so we don't need to use the .files method here
+    //if we don't wanna use cloudinary n all then we can directly save this in our db without using cloudinary n all
+    if(!avatarLocalPath){
+        throw new ApiError(400,"avatar file is missing")
+    }
+
+    const avatar=await uploadOnCloudinary(avatarLocalPath)
+
+    if(!avatar.url){
+        throw new ApiError(400,"error while uploading an avatar")
+    }
+
+    const user=await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                avatar:avatar.url
+            }
+        },
+        {new:true}
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,user,"avatar updated successfully"))
+})
+
+
+const updateUserCoverImage=asyncHandler(async(req,res)=>{
+    const coverImageLocalPath=req.file?.path//as we need only one file here so we don't need to use the .files method here
+    //if we don't wanna use cloudinary n all then we can directly save this in our db without using cloudinary n all
+    if(!coverImageLocalPath){
+        throw new ApiError(400,"CoverImage file is missing")
+    }
+
+    const coverImage=await uploadOnCloudinary(coverImageLocalPath)
+
+    if(!coverImage.url){
+        throw new ApiError(400,"error while uploading coverImage")
+    }
+
+    const user=await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                CoverImage:coverImage.url
+            }
+        },
+        {new:true}
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,user,"cover image updated successfully"))
+
+})
+
+
+
+
 export {
     registerUser,
     loginUser,
     logoutUser,
-    refreshAccessToken
+    refreshAccessToken,
+    getCurrentUser,
+    changeCurrentPassword,
+    updateUserAvatar,
+    updateUserCoverImage
 }
