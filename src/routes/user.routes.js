@@ -1,10 +1,11 @@
 //we'll make the router and export it
 import { Router } from 'express'
-import { registerUser } from '../controllers/user.controller.js'
+import { loginUser, logoutUser, registerUser } from '../controllers/user.controller.js'
 //we'll do the import like this by using {} when we're also exporting in the same way only 
 import {upload} from '../middlewares/multer.middleware.js'
 //the thing is how to use the upload now, middleware is something that gets executed at the middle ie. meet me while going at the destination 
 
+import {verifyJWT} from '../middlewares/auth.middleware.js'
 
 
 const router=Router()
@@ -27,6 +28,17 @@ router.route("/register").post(
     registerUser
 )//this method is in the controllers folder, on calling the /register the register method will be called 
 // router.route("/login").post(login)
+
+
+router.route("/login").post(loginUser)
+
+//secured routes:-
+router.route("/logout").post(verifyJWT,logoutUser)
+
+//we're making the endpoint of the refresh token here:-
+router.route("/refresh-token").post(refreshAccessToken)//as we've done all the decode token work in the controller so we don't need this verifyJWT MIDDLEWARE 
+
+
 
 //now for checking the validation, we'll go to the controllers file for checking it 
 

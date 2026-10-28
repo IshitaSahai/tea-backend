@@ -3,7 +3,34 @@ import {ApiError} from "../utils/ApiError.js"
 import { User } from "../models/user.model.js";
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import {ApiResponse} from '../utils/ApiResponse.js'
-import e from "express";
+import jwt from "jsonwebtoken";
+
+
+//method to generate access and refresh tokens:-
+const generateAccessAndRefreshTokens=async(userid)=>{
+    try {
+        const user=await User.findById(userid)//find the user in order to generate its token
+        const accessToken=user.generateAccessToken()
+        const refreshToken=user.generateRefreshToken()
+
+        //we give the access token to the user but we store the refresh token in the db as well so that we don't hv to ask the password to the user again n again :-
+        //user contains all the properties and contains everything including refreshtoken as well and user is an object so we can easily add the refreshtoken in it:-
+        user.refreshToken=refreshToken
+        //saving the user:-
+        //no need to store this method in any db as it just has to be done 
+        await user.save({validateBeforeSave:false})//while saving the mongoose models kick-in which means that all the required fields will be required to be entered in order to even save the model but here we're not having any password to save so we use this method so that it doesn't check for all the required fields and we can save only whichever fields we need to save:-
+
+
+        //now we've saved refresh token in the db but we still hv their reference, so we can return those methods:-
+        return {accessToken,refreshToken}
+
+    } catch (error) {
+        throw new ApiError(500,"something went wrong while generating refresh and access tokens")
+    }
+}
+
+
+
 //async handler is a higher order function that accepts a function
 const registerUser=asyncHandler(async(req,res)=>{
     // res.status(200).json({
@@ -112,8 +139,166 @@ return res.status(201).json(
 
 })
 
+const loginUser=asyncHandler(async(req,res)=>{
+    //steps/todos for login of a user:-
+    //1. take data from the user using req.body
+    //login can be done via username/email
+    //2. validate the data if it's correct or not(non empty etc validity)
+    //3. check if the user already exists if not then redirect to register page/ask to register first 
+    //if the user DNE then tell the request to login that the user DNE 
+    //4. if the user exists then match their password and if it doesn't match then tell pass is wrong else give them the access to the application and generate and give them the access to all the refresh/access tokens etc  
+    //send these tokens in the form of secure cookies and send the response that the login has been done successfully 
+
+    const {email,username,password}=req.body
+    console.log(email)
+
+    if(!username && !email){//if both aren't present 
+        //if we need to write for either email or password:- !(email || password)
+        throw new ApiError(400,"username or password is required")
+    }
+
+    //if both/anyone of them exists:-find the user in the db of either username/email or both:-
+    const user=await User.findOne({//$and,$comment,$or,$nor etc r all the mongodb operators:- they can be used to get if either of the username or the email exists:-
+        $or:[{username},{email}]
+    })
+
+    if(!user){
+        throw new ApiError(404,"user doesn't exist")
+    }
+
+    //if user exists check pass:-User is the object of mongodb here, so we shouldn't find the methods here via User, instead we should use user to find the methods:-findOne, updateOne etc methodds are the ones that're available via mongoose of the mongodb 
+    //all the methods that we've defined in the user.model are the ones that're available in the user 
+    const isPasswordValid=await user.isPasswordCorrect(password)
+
+    if(!isPasswordValid){
+        throw new ApiError(401,"invalid user credentials")
+    }
+
+    //make access and refresh tokens if pass is correct:-
+    const {accessToken,refreshToken}=await generateAccessAndRefreshTokens(user._id)
+
+    //now we've both refresh and access tokens nd now we need to send them to the cookies:-
+
+    //we've the access of the refreshtoken at a different place than that of the user reference that we're having and that's empty as we took the access of the refrehs token of the user differently and the refresh token that we're having the access is in different variables afterwards :-
+    //so we can either update the token in the user via object or we can directly make anpther db query, we need to perform the operations as per our own thinking by properly knowing if it's an expensive operation for us to make the db query or to update via the object:-
+    //we're updating in the db:-
+    //this variable contains all the fields that we need to send  
+    const loggedInUser=await User.findById(user._id).
+    select("-password -refreshToken")
+
+    //now we need to send the cookies and in order to do so we need to design some options for cookies:-
+    const options={
+        httpOnly:true,
+        secure:true
+    }//by default anyone can modify our cookies at the frontend but as soon as we set httpOnly and secure as true then the cookies become modifiable only via the server and we can't modify it via frontend
+    return res
+    .status(200)
+    .cookie("accessToken",accessToken,options)
+    .cookie("refreshToken",refreshToken,options)
+    .json(//we're sending the refresh token and access token here as we're handling the case when the user is trying to save the refrehs and access token on their own (they may be saving it in their local storage due to some reason or maybe they're developing a  mobile appplication in which the cookie won't be set) 
+        new ApiResponse(
+            200,//statuscode
+            {//data as an object
+                user:loggedInUser,accessToken,refreshToken
+            },
+            "user logged in successfully"//message
+        )
+    )
+})
 
 
+const logoutUser=asyncHandler(async(req,res)=>{
+    //we'll remove the cookies and then also update the refresh token of the user:-
+    //we can use the middlewares in order to get the id of the user that's logged in
+    //now as the middleware has already been executed, so we've the access of the req.user in this 
+    //we were logged in and already had the access token, a query wa made from the db based on the access token and added the the req.user there:-
+    // req.user._id
+    await User.findByIdAndUpdate(
+        req.user._id,//find the user
+        {//what fields to update
+            $set:{//using mongodb operator:-
+                refreshToken:undefined
+            }
+        },
+        {
+            new:true//returned response will give the new updated value otherwise it may give the old value along with refreshtoken
+        }
+    )
+
+    const options={
+        httpOnly:true,
+        secure:true
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken",options)    
+    .clearCookie("refreshToken",options)
+    .json(new ApiResponse(200,{},"user logged out successfully"))
+})
 
 //now we've made the method and our next step is to create the routes as the main work of the nodejs is to run the method when it gets hit with some url so we create a folder with routes in which we'll keep all urls
-export {registerUser}
+
+
+//WE'LL MAKE THE CONTROLLER TO MAKE AN ENDPOINT FOR REFRESHING THE ACCESS TOKEN:-
+const refreshAccessToken=asyncHandler(async(req,res)=>{
+    //we can get the access token refreshed by sending the refresh token to the db and we can access that refresh token via cookies if anyone is hitting that endpoint 
+
+    //this is the refresh token that we're fetching from the user's end ie. it's not the one that's stored in our db, it's the one that the user is having on their side that's y we've kept the name as incoming refresh token which means that the token is coming from the user's end via cookies and it isn't the token from our db:-
+    const incomingRefreshToken=req.cookie.refreshToken || req.body.refreshToken//in case if someone is using the mobile application then we may get the cookies via body
+
+    if(!incomingRefreshToken){
+        //this apierror is the error response only that we're sending, as if our application isn't performing well/there's some problem in it then it's better to get the apierror like this instead of getting the fake api response of 200 even when our application isn't performing as it's desired/is producing some undesired outcomes:-
+        throw new ApiError(401,"unauthorised request")//as our token isn't correct so we're saying it's an unauthorized request
+    }
+
+    //now we'll also need to verify the incoming token:-via jwt.verify, we get the raw token that we've stored in the db, the token that the user gets is an encrypted token so via this jwt.verify, we get the decoded form encrypted token that's with the user so that we can directly match it with the token that's stored in our db:- 
+    try {
+        const decodedToken=jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        )
+    
+        //as while generating the refreshtoken in the user.model, we entered only the _id, so we'd be having the access of that id with us, so we can take the information of the user by asking a query to the mongodb:-
+        const user= await User.findById(decodedToken?._id)//via User here, we're accessing the id from the db whose schema we've made in our user.model
+    
+        if(!user){
+            throw new ApiError(401,"invalid refresh token")
+        }
+    
+        //now while making the method, generateAccessAndRefreshTokens, we also saved the refresh token ie. the encoded(encrypted) token in the user so we need to match the incoming refresh token that the user is sending us and the token that's with the user whom we've founded by decoding the incoming refresh token from the user:-
+    
+        if(incomingRefreshToken!==user?.refreshToken){
+            throw new ApiError(401,"refresh token is expired or used")
+        }
+    
+        //if the tokens match then we can make the new token and give it to the user:-
+        const options={//as we're sending the token in the cookies
+            httpOnly:true,
+            secure:true
+        }
+    
+        //generating new tokens:-
+        const {accessToken,newRefreshToken}=await generateAccessAndRefreshTokens(user._id)
+    
+        return res
+        .status(200)
+        .cookie("accessToken",accessToken, options)
+        .cookie("refreshToken",newRefreshToken, options)
+        .json(
+            new ApiResponse(200),
+            {accessToken,refreshToken:newRefreshToken},
+            "access token refreshed successfully"
+        )
+    } catch (error) {
+        throw new ApiError(401,error?.message || "invalid refresh token")
+    }   
+})  
+
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken
+}
