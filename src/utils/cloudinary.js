@@ -42,4 +42,19 @@ import fs from "fs"//it's the file system, in node we get a file system, and we 
            return null//just for the sake that the method returns properly 
         }
     }  
-export {uploadOnCloudinary}
+
+    const deleteFromCloudinary = async (publicId) => {
+    try {
+        if (!publicId) return null;
+
+        const response = await cloudinary.uploader.destroy(publicId);
+
+        return response;
+    } catch (error) {
+        console.log("Error deleting image from Cloudinary:", error);
+        return null;
+    }
+};
+
+
+export {uploadOnCloudinary, deleteFromCloudinary}

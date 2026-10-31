@@ -4,7 +4,8 @@ import { User } from "../models/user.model.js";
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import {ApiResponse} from '../utils/ApiResponse.js'
 import jwt from "jsonwebtoken";
-import { use } from "react";
+import { deleteFromCloudinary } from "../utils/cloudinary.js";
+import mongoose from "mongoose";
 
 
 //method to generate access and refresh tokens:-
@@ -75,7 +76,7 @@ const registerUser=asyncHandler(async(req,res)=>{
     $or:[{username},{email}]//it checks all the values together that're needed to be checked  
 })
 
-if(existedUser){
+if(!existedUser){
     throw new ApiError(409,"user with email or username already exits")
 }
 
@@ -139,6 +140,7 @@ return res.status(201).json(
 
 
 })
+
 
 const loginUser=asyncHandler(async(req,res)=>{
     //steps/todos for login of a user:-
@@ -212,7 +214,7 @@ const logoutUser=asyncHandler(async(req,res)=>{
     //we'll remove the cookies and then also update the refresh token of the user:-
     //we can use the middlewares in order to get the id of the user that's logged in
     //now as the middleware has already been executed, so we've the access of the req.user in this 
-    //we were logged in and already had the access token, a query wa made from the db based on the access token and added the the req.user there:-
+    //we were logged in and already had the access token, a query was made from the db based on the access token and added the the req.user there:-
     // req.user._id
     await User.findByIdAndUpdate(
         req.user._id,//find the user
@@ -325,7 +327,7 @@ const changeCurrentPassword=asyncHandler(async(req,res)=>{
 const getCurrentUser=asyncHandler(async(req,res)=>{
     return res
     .status(200)
-    .json(200,res.user,"current user fetched successfully")
+    .json(new ApiResponse(200,res.user,"current user fetched successfully"))
 })
 
 
@@ -341,7 +343,7 @@ const updatetAccountDetails=asyncHandler(async(req,res)=>{
     }
 
     //sending the info to update both the email and username:-
-    const user=User.findByIdAndUpdate(
+    const user=await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set:{
@@ -368,12 +370,34 @@ const updateUserAvatar=asyncHandler(async(req,res)=>{
         throw new ApiError(400,"avatar file is missing")
     }
 
+    //helper function to delete the old avatar id from the cloudinary:-
+    const getPublicIdFromUrl = (url) => {
+        const parts = url.split("/");
+
+        const uploadIndex = parts.indexOf("upload");
+
+        if (uploadIndex === -1) {
+            return null;
+        }
+
+        const publicIdWithExtension = parts
+            .slice(uploadIndex + 2)
+            .join("/");
+
+        return publicIdWithExtension.replace(/\.[^/.]+$/, "");
+    };
+
+    const oldAvatarUrl = (await User.findById(req.user?._id))?.avatar;
+
+    //uploading new avatar on cloudinary:-
     const avatar=await uploadOnCloudinary(avatarLocalPath)
 
     if(!avatar.url){
         throw new ApiError(400,"error while uploading an avatar")
     }
 
+
+    //update mongodb with the new url:-
     const user=await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -383,6 +407,17 @@ const updateUserAvatar=asyncHandler(async(req,res)=>{
         },
         {new:true}
     ).select("-password")
+
+
+    //deleting from the cloudinary after the new image has already been uploaded :-
+    if (oldAvatarUrl) {
+        const oldPublicId = getPublicIdFromUrl(oldAvatarUrl);
+
+        if (oldPublicId && oldPublicId !== avatar.public_id) {
+            await deleteFromCloudinary(oldPublicId);
+        }
+    }
+
 
     return res
     .status(200)
@@ -421,6 +456,136 @@ const updateUserCoverImage=asyncHandler(async(req,res)=>{
 
 
 
+const getUserChannelProfile=asyncHandler(async(req,res)=>{
+    const {username}=req.params//in order to get the profile of the channel we go at its url and take its username
+    if(!username?.trim()){
+        throw new ApiError(400,"username is missing")
+    }
+    //we may find document from the username by using the .find/.findById methods but as we've used $match etc in the db that automatically finds a single document from all the documents in the db, so we can directly use aggregation pipelines:- 
+    const channel=await User.aggregate([
+        {//1st pipeline
+            $match:{//how to match the document that we want 
+                username:username?.toLowerCase()//we've got one document via this 
+            }
+        },
+        {//2nd pipeline:-we need to find subscribers of that document:-
+            $lookup:{
+                from:"subscriptions",
+                localField:"_id",
+                foreignField:"channel",//in order to find subscribers we select the channels
+                as:"subscribers"//we've gathered all the documents in this pipeline so we need to calculate this subscribers field 
+            }
+        },
+        {//3rd pipeline:-to find the channels to which we've subscribed 
+            $lookup:{
+                from:"subscriptions",
+                localField:"_id",
+                foreignField:"subscriber",//in order to find channels to which we've subscribed we select the subscriber
+                as:"subscribedTo"
+            }
+        },
+        {//4th pipeline:-in order to add both the fields in the object of the users that we'll send
+            $addFields:{//fields that we need to send
+                subscribersCount:{
+                    $size:"$subscribers"//we're using $ with all those that're fields 
+                },
+                channelsSubscribedToCount:{
+                    $size:"$subscribedTo"
+                },
+                isSubscribed:{
+                    $cond:{//we need to write a condition in order to know if we've to show subscribed at the frontend or subscribe, for that we'll send a true/false msg at the frontend, if it's true then it's already subscribed otherwise it'll show subscribe button
+                        if:{$in:[req.user?._id,"$subscribers.subscriber"]},
+                        then:true,
+                        else: false
+                        //if the user is present in the subscribers field of the channel//we're using subscriber as our subscription model in the database is having that field in it in its schema 
+                    }
+                }
+            }//we already had all other info abt the user in our pipeline and we fetched the info of subscribers and channels from the subscriptions and added it to the user pipeline as well
+        },
+        {//5th pipeline:-
+            $project:{//gives projection of the selected things 
+                fullname:1,//whatever things we need to pass on in the selected things, we'll pass 1 in those things' values 
+                username:1,
+                channelsSubscribedToCount:1,
+                subscribersCount:1,
+                isSubscribed:1,
+                coverImage:1,
+                email:1,
+                avatar:1
+            }
+        }
+    ])//after writing the aggregate pipelines we get arrays as values
+
+    // console.log(channel)
+    if(!channel?.length){
+        throw new ApiError(404,"channel doesn't exist")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,channel[0],"user channel fetched successfully")
+    )
+})
+
+
+//we need to now make the watch history functionality which will display the videos along with their thumbnail, the no of views, and many other things that're present inside a particular video's column, we also need to show the owner of the video, in order to do so we'll need to do the 1st lookup/join in order to get the videos ids in the watch history from videos schema, we then need to do the nested loopup/join that'll allow us to take the owner info from the users schema
+const getWatchHistory=asyncHandler(async(req,res)=>{
+    //we'll get the mongodb id via req.user._id:-
+    //usually in mongodb's _id we get the string '6ae00f7897da106bed6c9f14', but it's not the actual id of mongodb, in order to actually get the id of mongodb, we need to get ObjectId('6ae00f7897da106bed6c9f14'), but as we're using mongoose so as soon as it gets the string '6ae00f7897da106bed6c9f14' it automatically converts it into the mongodb objectId 
+    //SO when we do req.user._id we get the string instead of mongodb object id, and when the string is accessed using mongoose findById/find etc then it converts it automatically into mongodb object id
+    
+    //we need to convert this id:- 
+    const user=await User.aggregate([//aggregation pipelines 
+        {//1st pipeline:-
+            $match:{//mongoose doesn't work in aggregation pipelines, all the code of the aggregation pipeline goes directly so we need to convert the string id into the object id:-
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {//2nd pipeline to get watch history from videos (that's originally named Video in the mongoose video model schema that's converted into lowercase plural when seen in the databse)  
+            $lookup:{
+                from:"videos",//where to lookup ie. in the videos model from the users model
+                localField:"watchHistory",//field of the initial users model that's to be matched to the field that's in the videos model 
+                foreignField:"_id",
+                as:"watchHistory",
+                //in order to get the owners info from again the users model, we need to have a sub pipeline:-
+                pipeline:[
+                    {
+                        $lookup:{
+                            from:"users",
+                            localField:"owner",
+                            foreignField:"_id",
+                            as:"owner",
+                            pipeline:[//as the user model will be having a lot of values that're not all needed for our work, so in order to take only the selected vlaues from the user model for the owner field, we need to make one more pipeline 
+                                {//one more pipeline for projecting only the values that we want:-
+                                    $project:{//whatever data we need to get in the owner field, we'll take it in the owner field via the $project 
+                                        fullname:1,
+                                        username:1,
+                                        avatar:1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    //in order to improve the structure of the data we make another pipeline (as we usually get the data in the form of an array and we want to take only the first value from the array using $first)
+                    {
+                        $addFields:{
+                            owner:{//overwriting the existing field:-
+                                $first:"$owner"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,user[0].watchHistory,"watch history fetched successfully")
+    )
+})
 
 export {
     registerUser,
@@ -430,5 +595,7 @@ export {
     getCurrentUser,
     changeCurrentPassword,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,
+    getUserChannelProfile,
+    getWatchHistory
 }
