@@ -1,0 +1,292 @@
+STEP 1:- we used npm init to initialize the backend, used some by default values in it like main and added some of our own like the author, keywords, description 
+
+STEP 2:- setting up the things on github by initializing git and creating the repo on github 
+
+in order to change the branch from default to main, use git branch -M main
+
+in order to add/push the code files to the repo, we need to add the remote, so we need to add the remote origin of the repo 
+
+then the command containing -u adds the upstream 
+
+
+STEP 3:-now the major thing that we're going to store is the images:- we'll be using the 3rd party service(aws, asure, cloudnary) in order to store them, but the usual common syntax that we see is that:- whatever service we use, first of all we make the user to upload the photos and keep them temporarily on our server so that if in case there's any connection loss of the server then also our server has those photos/videos on it and then we put it on the cloudnary via a 3rd process
+
+now when we create empty folders then those aren't available to be pushed as git doesn't push the empty folders, git tracks the files, the folders made are empty so it doesn't show anything to commit, so we add a new file named .gitkeep, it's an empty file but if we need to create some empty temporary folders that're imp for our workflow and we need to push and track them, then we must hv this file inside the folders 
+
+now we need to make the /gitignore file in the root so that all the files that aren't needed to be pushed can be kept in it
+
+there're also the gitignore generators that can be used to get the project files as per our type of the project so that whatever files should've been in gitignore of our project, we get all of them via the generators 
+
+then we create the .env file, ie. whenever we push the things in the production, then these env variables are taken from the system so that they remain secure, they aren't taken from the files 
+
+whatever work will be done in the .env, that's in the .env.sample so that it can be accessed on the github if anyone wants to get what all should be the env variables 
+
+
+we'll create the src folder in the root and it totally depends on us that we wanna keep all our directory files here only in the root or inside the src folder 
+
+generally it's better to keep everything inside the src as it's more organised practice 
+
+
+we can make the files/directories directly using the git bash instead of the powershell
+
+
+now we should write the scripts for how we will be running the file inside the package.json by writing the scripts, and the syntax that we'll be using is the import syntax instead of the require express syntax so we'll be adding that too via package.json file only 
+
+whenever the file of the server is reloaded or we change anything in it then we need to stop and start the server, so in order to handle it, we use the utility k/a the nodemon :- it just restarts thet server as soon as our file gets loaded 
+
+
+nodemon is installed using the dev dependency, the difference between dependency and the dev dependency is that dev dependency is the one that we use during the development and we don't take it in the production 
+there's no effect of any file being heavy or light in that as it only comes to use in the dev and we don't take it to work during the production
+
+npm i nodemon :- if we install it using this then it becomes the main dependency 
+
+to install it as a dev dependency:-npm install --save-dev nodemon  or npm i -D nodemon
+
+we create the dev command inside the package.json in the scripts section and in order to tell nodemon that reload the index.js file inside the src whenever that command is used 
+
+there's a slight conflict between the env variables and the modules, so the problem is that we can't use the ES6 syntax directly, we need to use the require('dotenv') syntax 
+
+proper professional production grade project structure setup :-
+done by creating the folders inside the src:-
+-controllers:- it'll contain our functionality 
+-db:- it'll contain how to connect the db, the db connection logic is written here
+-middlewares:- it'll contain the code that's run in between ie. the request that we've received, before the server fulfills that request, if we wanna put some checking in between then we do it inside the middleware, eg:- we've got a request and we're asking some info to the server, middlewares can be used in between and take the cookies from it so that we can know that if we're capable of taking that info or not 
+-models:- it'll hv the schema of the db
+-routes:-till now we'd used the routes(app.get, /instagram, /twitter etc) inside the index.js file only but professionally we need to use them inside the routes folder
+-utils:-shortcut for the utility, while working we'll need a lot of utilities eg:- file upload is a utility and it'll be done in the form of the user profile, videos and many other forms as well so we make its utility, at many places, we'll use the mailing as well, we may also do the works of some tokens as well
+so whatever work we're repeating that's kept inside the file/folder and we call it as utility whenever we need that file we use it 
+
+
+just like we'd installed nodemon, similarly there's one more plugin k/a prettier, when we work in large teams then some people may take a tab space as 2 spaces whereas some may use 4 spaces so there may be many conflicts when everything is merged together in git so prettier extension as well as the settings have to be added in the vs code per project basis 
+it's a dev dependency, when the prettier comes in then we've to add 3-4 more files as well on our own and there's no shortcut for it, so the files that we need to add are:-
+.prettierrc
+.prettierignore:- it tells in which files do we not need to implement prettier 
+
+
+//WAYS TO CONNECT THE DB:- 2 MAJOR WAYS:-
+//1. AS WE R GONNA EXECUTE THE WHOLE CODE VIA INDEX FILE VIA NODEMON/NODE SO WE CAN KEEP THE WHOLE OF OUR CODE IN THE INDEX FILE ONLY, SO AS SOON AS OUR INDEX FILE LOADS, THE CODE OF OUR DB CONNECTION THAT'S WRITTEN IN OUR FUNCTION ALSO GETS EXECUTED  
+//2. WE MAKE A FOLDER NAMED DB, WRITE THE CONNECTION FUNCTION IN IT AND THEN IMPORT THE FUNCTION IN THE INDEX FILE AND THEN EXECUTE IT THERE 
+
+we'll use mongodb 
+most of the professional db are on the website of mongodb
+mongodb atals:- service of mongodb where they give the online db
+ishitasahai0999_db_user jkf0qJN0jrQPt97v username and password of my db 
+connection string mongodb+srv://<db_username>:<db_password>@cluster0.ucu8cxi.mongodb.net/ =>note that we don't take any special chars in the password or ending slash at the end 
+
+in production grade settings of setting up ip address we never allow access from anywhere (ie. 0.0.0.0/0)
+
+in order to setup the db, after doing all cluster,db user and network access stuff on the mongodb atlas, we come on this project folder and then add the env variables required for the project 
+
+OUR APP WILL BE VIA EXPRESS AND THE DB CONNECTION WILL BE VIA MONGOOSE 
+
+things we'll require to install:-
+//env package that we'll be using:-dotenv as we're gonna load everyhting via env variables 
+
+mongoose
+
+express
+
+//STEP 1:- connecting to db IN INDEX.JS via mongoose using:-const mongoose = require('mongoose');
+things to remember:-
+//1. whenver we try to talk to the db then the problems may arrise SO ALWAYS WRAP IN TRY CATCH/PROMISES
+//2. DB IS ALWAYS IN ANOTHER CONTINENT SO WHENEVER WE INTERACT WITH THE DB IT TAKES TIME SO USE ASYNC AWAIT ALWAYS 
+
+//our db should hv a name so we're exporting the name of the db via constants file
+export const DB_NAME="teaandcode" 
+//we've not put it in the env as it isn't any sys specific var,it's just the name of our db application as it's not any sensitive info so can be kept here 
+
+
+
+//MIDDLEWARES:- 
+when we write the code request.get() and we write a method for it that what will happen after sending the request how will the response go:-
+let's say the client hits url /instagram , then what's its next process:-
+we'll tell the client what to do if they hit that url:-usually we handle it using the res.send("i") or res.json() etc
+but we need to perform a check which ensures that we're capable to take that response or not via checking maybe that we're logged in or not etc
+
+so we need to perform some checks in between, those checks are k/a the middlewares 
+
+in between we write some functionality that checks if the user is logged in or not then only we'll send the response
+
+the checking can be of multiple types and there can be multiple middlewares, eg:- we are an admin or not, in that case the multiple checks will be performed for each thing ie. user is logged in + user is an admin 
+so we can hop on multiple checks one after another, so the user will go to one check after the request and then on another 
+there's a sequence to add these checks and the checks are done in the sequence in which we write the code 
+
+there're actually 4 arguments in the req,res block that we use to handle the apis:-
+(err,req,res,next) this request is the request that we've received, the response is the response that we're gonna send, next is the flag:- it means that we're talking abt the middlewares, ie. it passes a flag to each middleware to tell it that if its work has been finished then it can move to the next middleware for it to complete its work, when ther're no more middlewares left then the flag is discarded and the response is sent
+
+
+WHENEVER WE TALK TO THE DB WE TAKE CARE OF THE 2 MAIN THINGS:-1. ASYNC, AWAIT, AND 2. THE TRY CATCH/.THEN,.CATCH
+
+AS WE NEED TO TALK TO THE DB SO MANY TIMES, so we can make as a generalized function it in a separate file as a utility so that we don't need to write it again n again and use it wherever needed so whenever we need to execute this function we can pass the function in the method in which it's to be executed and it will be a wrapper 
+
+
+
+//FILE UPLOAD:-frontend doesn't have many options of file upload, it can simply create a form, only browse a file, and give us its link
+
+all the work of file upload is of the backend 
+
+even the frameworks that we're using like express etc aren't capable of file uploading capabilities, we need to configure so many things 
+
+FILE HANDLING ISN'T DONE ON OUR OWN SERVERS, IT'S EITHER DONE ON THE SPECIALIZED 3RD PARTY SERVICES OR IT CAN BE UPLOADED ON THE AWS IT DEOENDS ON THE SIZE OF THE FILE WE'RE DEALING WITH AND HOW LARGE CALCULATIONS WE'RE DOING AND WHAT'S THE RATE OF THOSE CALCULATIONS 
+
+THE MAIN THING IS HOW TO HANDLE :- all the files aren't gonna come in all the api endpoints ie. it may come in the register and not login(noone logs in with the image), so it's not a correct way to write the whole code in those controllers, so it's better to make the file upload n all things a separate utility function, sometimes we make it as a middleware and sometimes as a utility, but we keep it separately only so that we can reuse it, the same upload concept can be used with the image, video and pdf so our code is very reusable, SO WE KEEP THIS CODE SEPARATE ONLY AS IT DOESN'T COME INTO WORK ON ALL THE ENDPOINTS, SO WHEREVER IT'S NEEDED WE CAN INSERT IT AS A MIDDLEWARE THAT'S Y IT SHOULD BE KEPT SEPARATELY ALWAYS 
+
+MIDDLEWARE:- JAANE S PHELE MJHSE MILKE JAANA IE. JO BHI KAAM KRNE JAA RHE HO USKE PHELE MJHSE MILTE HUE JAANA 
+
+
+SERVICES THAT WE'RE USING:-
+cloudinary:-https://cloudinary.com/ :- it's a big organization that does a lot of work of the images, files etc, also does the work for ai n all of cropping the images etc, many organizations keep their images, video files etc on cloudinary and handls everything via it only 
+
+whenever we upload a file we need 2 packages at the backend:- express fileupload https://www.npmjs.com/package/express-fileupload and multer here we'll use multer https://www.npmjs.com/package/multer
+
+THE STRATEGY THAT WE'RE GONNA USE FOR THE FILE UPLOADS:- 
+1 we'll upload the file via the multer only as the file upload doesn't take place via cloudinary directly, cloudinary is only a service like the aws, it's an sdk 
+cloudinary takes the file from us and uploads it on their server (either aws or cloudinary) 
+2 we're gonna take the file from the user and store it on our local server temporarily 
+3 in the next step, we'll use cloudinary to take the file from our local storage and will store it on the server
+we can directly take the file from the multer and give it to the cloudinary to upload but in production grade settings the file is taken from the user and is stored on our local server temprarily so that when the file has come on our local server so that there can be chances of reupload 
+
+
+after making the models we'll make the controllers (register, file upload,login,logout etc)
+
+//after that we'll use multer to create middlewares, we're not writing directly as we only wanna use the file upload capabilities wherever we want it by injecting it using multer  eg:- if it's needed in registration form then we'll inject it in that and if not needed in login form the we won't use it in that 
+cloudinary is a utility as it's a method that's needed to be used at many places but this middleware that we're making isn't a utility, it's just used to take'give some info in the middle of any 2 controllers/processes going on
+
+we also need to configure middlewares after writing them 
+
+
+//resources:-
+https://expressjs.com/
+https://www.npmjs.com/package/dotenv
+https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj
+https://dashboard.render.com/login?next=%2Fweb%2Fsrv-db3n9cvlk1mc73c7lcjg%2Fdeploys%2Fdep-db3n9cvlk1mc73c7ld5g%3Fr%3D2026-10-08%254010%253A46%253A15%257E2026-10-08%254010%253A48%253A41
+https://teabackend-pjva.onrender.com/
+https://mrkandreev.name/snippets/gitignore-generator/#Node
+https://www.npmjs.com/package/nodemon
+https://account.mongodb.com/account/login?n=https%3A%2F%2Fcloud.mongodb.com%2Fv2%2F6ad44a9373a223fefc40a10f&nextHash=%23clusters%2Fconnect%3FclusterId%3DCluster0&signedOut=true
+https://mongoosejs.com/docs/middleware.html#pre
+https://www.npmjs.com/package/jsonwebtoken
+http://nodejs.org/api/errors.html
+https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
+https://www.mongodb.com/docs/manual/core/aggregation-pipeline/
+https://www.jwt.io/
+https://console.cloudinary.com/app/c-d8fb61c6e91817dc29ad9eb69bedb8/image/getting-started
+https://www.npmjs.com/package/multer
+https://github.com/expressjs/multer
+
+
+//MAKING DB ON MONGOOSE:-starting video of backend series 
+https://stackblitz.com/edit/stackblitz-starters-p8rgwrwf?description=&file=models%2Fhospital_management%2Fdoctor.models.js,models%2Fhospital_management%2Fhospital.models.js,models%2Fhospital_management%2Fpatient.models.js&title=Express%20Starter
+
+
+
+
+HTTP vs HTTPS:- technology, communication and rules don't hv any major difference there's only a little difference in the protocol ie. the difference is that the data in http goes in the clear text only ie. if we send abc then abc only goes to the server, but in https, the data that we send is encrypted and is sent by performing many operations 
+https:- one more layer comes in between that does the work of adding the keys/performing xor operations with our data so that it becomes unreadeable normally and becomes readable only at the server or whatever comes from the server, it becomes readable at the client that's y it's k/a https
+HTTP:-hyper text transfer protocol
+
+the text is in many formats and there's the data in many forms, so the thing that's to be seen is that how do we need to transfer the text 
+
+//the main whole point is about how can we transfer the text or anything :- there're many variables and many options and we wanna transfer in the optimised manner so we don't wanna use any ds as such that's very expensive so we need the dsa knowledge
+As the computers are the 2 OS talking to each other on a network, so the networking comes into play and the OS will also store that data so the knowledge of OS also comes into play
+
+URL:-UNIFORM RESOURCE LOCATOR:- where's its location 
+URI:-UNIFORM RESOURCE IDENTIFIER
+URN:-UNIFORM RESOURCE NAME
+
+there's not much difference in all the 3, the main thing is that we need the address in order to talk to it, so we need its location and we're not sure that the url of the location will be http only, just like in case of mongodb we had the protocols like srn,srv instead of http 
+everything has a protocol to communicate and http is one of them
+and there're different names of all of them so we say the common technical name of them to be the URI/URL ie. we need the name of that resource that how's being identified uniquely so in big companies people use URI/URN instrad of using address/URL 
+
+
+
+HTTP HEADERS:-
+when we send the http request then we also need to add some additional information ie. the info that we need to include while sending the file anywhere for eg:- when we're sending the file, then we need to send some data along with the file, ie. when the file has been created, what's the name of the file, when was it modified so there's some metadata that comes along with the file, and the HTTP HEADERS ARE ALSO THE SAME ie. it's the data abt the data ie. the metadata and this metadata is in the form of the key value pairs eg:- name:hitesh 
+these key values in the http headers are kept so much opened ie. eg:- some headers r already defined ie. what'll be the output on getting a particular input, but we can also make our own headers and we get the headers both in request and response 
+when we send the request then as per the location and the method of the request sent, if we've used any tool like postman/thunderclient or something or sent the information programatically in order to send the request or if we've used any tool to send it, so the headers are sent as per that and if we've sent the request from the browser, then some different headers are sent and it also depends upon the response ie. what sort of the response the server is sending us, ie. okay or 404-not found 
+so there're the headers both in the response as well as the request and the headers are the metadata 
+
+THE WORKS OF HEADERS:- used for 
+CACHING:- to see that the request had come recently only so we can pick up the data/some values from the cache database if we get them then
+they're also used for authentication:-there're many headers of AUTHENTICATION as well ie. if there're bearer tokens/session values/session cookies/refresh tokens or anything so they're also used for the authentication works
+STATE MANAGEMENT:-what's the state of the user ie. if it's a guest user or a logged in user if the user has kept anything in the cart or not, so we also see the state of the user
+
+previously, while sending the headers, we were also required to send the prefix 'x' ie. if we're sending the name then we need to send the name in the format:- x-name 
+
+CATEGORIES OF HEADERS:- 
+1 REQUEST HEADERS:-the data coming from the client is k/a the request headers 
+2 RESPONSE HEADERS:-whatever data is coming from the servers, it's k/a the response headers 
+3 REPRESENTATION HEADERS:- tell in which representation our data is, ie. the data is in which encoding or in which compression we'll handle so many cases in which we'll get the data in the form of zip or others so we need to extract it first and then we represent it, also it's used in applications using graph charts, and also in some applications like zerodha, razorpay there we send the data in the compressed form and we use graph charts in it as the network has a limit that we can send only a particular amount of data only via the network otherwise there're lags so in that case we use the representation headers to see what're the encodings/compressions of the data 
+4 payload headers:- payload is a fancy name for data, whatever data we need to send, ie. if we normally wanna send the id or the email of someone then it's all the payload
+
+MOST COMMON HEADERS:-
+1 Accept headers/metadata:- tells what kind of metadata/data are we gonna accept, it's mostly on the servers (application/json,text/html)
+2 User-agent:- tells from which appplication the request has come ie. from postman, or the browser has sent the request, so which browser it was and which engine was it supporting, was it the browser of geco engine or saffari and from which os
+so while visiting some webistes, they give a popup to use their app, all that's taken from the user agent metadata only, ie. if the request is coming from the mobile browser and the app of the website also exists then they can send the popup to download their app
+3 authorization:- it's the most common metadata in the frontend, ie. Bearer ___________, this blank contains the long line of the code, these r just the jwt bearer tokens that we send 
+4 content-type:- it tells what all r we sending ie. the images/pdfs/ or whatever
+5 cookies:-it contains the key val pairs that hv the info abt how mcuh time the cookies will exist and what's the unique code and till what time we'll login the user
+6 cache control:- contains till when should we expire if the data wants to reamin in the network 
+
+SOME OTHER HEADERS THAT MAY BE PRESENT IN PRODUCTION GRADE APPS:-
+CORS HEADERS :- they don't do anything by themselves, it's just an origin policy by the company that from where r we allowing the origin from where ie. what all requests r we allowing to our application/ from where  :-
+1 access-control-allow-origin
+2 access-control-allow-credentials
+3 access-control-allow-method:- eg:- allow GET and not POST
+
+SECURITY HEADERS:-
+1 cross-origin-embedder-policy
+2 cross-origin-opener-policy
+3 content-security-policy
+4 X-XCS-protection
+
+all these headers have to be written by us that what all will happen from all the code/the metadata that we'll be writing, it's not something that's happening directly ie. it's not all written automacially, we've to write the code for each n everything
+
+
+HTTP METHODS:-tells what set of operations r being performed in order to interact with the server
+
+1 GET:- retrive and resource (give all the users/some users with a specific email)
+2 HEAD:- give only the headers as a response ie. there's no body msg in this case eg:- many times we wanna see the user agent/cache control in that case we create the endpoints that contain only headers and no body
+3 OPTIONS:-we can ask the server what all otpions r available at the specific url:- is GET available at /users, is POST available at /users etc
+4 TRACE:- it only sends the loopback ie. gives just the response to whatever request we've sent, used only for debugging 
+many times our resource is behind many proxies, so at which proxies the request is coming and the request is going by going via which proxies if we wanna do debugging , or if the response is taking a longer time to come/there's hopping then related to all those concepts then we use trace
+5 DELETE:- removes the resource
+6 PUT:- replaces a resource ie. if any of our resource is kept via the email id and we want the complete object to get replaced 
+7 POST:-interacts with the resource (mostly adds the value ie. adding a new user/product/category)
+8 PATCH:-when we wanna change only a specific part of the resource ie. we wanna edit
+
+all of these methods hv to be made in our controllers, it's nothing automatic
+
+
+HTTP STATUS CODE:-
+1xx (means the range starting from 1 after which we can use only 2 more digits):- used to pass only some information to the user 
+2xx (range starting from 2 ie. 201,200,202 etc):- used to tell the user that whatever operation they wanted to perform has been successfully performed + whatever data they'd sent has been successfully received by the user
+3xx (301,300,302 etc):- used for redirection ie. the resource that we wanted to view/method that we're trying to access has been moved somewhere else/removed either temporarily/permanentally
+4xx (400,401,402 etc):-used for client error eg:- the client tried to login/perform some operation without sending the token/entered the wrong password. ie/ the information hasn't been rceived correctly from the client side
+5xx (500,501,502 etc):- used for server error eg:- the client sent the image properly and we tried to upload it by calling the api and due to the network break/ network traffic/congestion and due to come reason the image couldn't upload, so in that case we say that the error has come from the server side and so we should retry to do that operation 
+
+100:- continue, 102:- processing, 200:-ok, 201:-resource created 
+
+for testing the  api/doing the api testing:- use POSTMAN
+
+
+
+//ACCESS AND REFRESH TOKENS:-
+//ACCESS TOKEN:- jb tk ye h tb tk koi bhi feature jha p authentication ki requirement h vha p uss resource ko access kr skte h
+for eg:- not evveryone will be allowed to upload the files but if we're authenticated/logged in then we can upload them
+but uf our login session is expired after 15mins due to security reasons then we'll hv to enter the pass after 15mins to login again
+
+REFRESH TOKEN:-we save it in the db as well and give it to the user also
+so, we validate the user using the access token only but if the user has the refresh token then we make the user to hit an endpoint so that by hitting the endpoint, if the refresh token with the user matches with that of the db then they will get a new access token and won't hv to enter the pass again and can directly login 
+
+
+
+ALL ABOUT REFRESH TOKEN AND ACCESS TOKEN:-
+they only hv the work that the user doesn't hv to enter the email and  password again n again
+
+ACCESS TOKEN:-IT'S SHORT LIVED, for eg:- one day only, after one day, the user will hv to enter the id password nd login again in order to refresh the token
+
+SO THERE'RE 2 TYPES OF TOKENS:- THE ACCESS TOKEN THAT'S SHORT LIVED AND NOT SAVED ANYWHERE AND IS GIVEN TO THE USER SO THAT THE USER CAN WORK CONSTANTLY 
+REFRESH TOKEN:-THE LONG LIVED TOKEN THAT'S STORED IN THE DB AND WHEN THE TIMER OF THE ACCESS TOKEN GETS EXPIRED, THE USER GETS TO KNOW THAT HIS/HER SESSION HAS EXPIRED SO THEY CAN EXTEND THEIR SESSION AND WHILE DOING SO THEY SEND A REFRESH TOKEN TO THE DB, WHICH IS MATCHED WITH THE REFRESH TOKEN STORED IN THE DB AND IF THE TOKEN MATCHES THEN THE SESSION GETS EXTENDED AND ALSO THE USERS GET BOTH OF THEIR ACCESS AND REFRESH TOKEN REFRESHED VIA HITTING THIS ENDPOINT, ELSE THE USER NEEDS TO REGISTER 
+
+

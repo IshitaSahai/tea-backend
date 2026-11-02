@@ -1,8 +1,7 @@
 import mongoose,{mongo, Schema} from "mongoose";
-import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 //we'll be using the mongoose-aggregate-paginate-v2 in this file, it's used as a plugin 
 //1st step is to import it:-
-import mongoosseAggregatePaginate from 'mongoose-aggregate-paginate-v2'
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const videoSchema=new Schema({
     videoFile:{
