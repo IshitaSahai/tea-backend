@@ -76,7 +76,7 @@ const registerUser=asyncHandler(async(req,res)=>{
     $or:[{username},{email}]//it checks all the values together that're needed to be checked  
 })
 
-if(!existedUser){
+if(existedUser){
     throw new ApiError(409,"user with email or username already exits")
 }
 
@@ -220,7 +220,7 @@ const logoutUser=asyncHandler(async(req,res)=>{
         req.user._id,//find the user
         {//what fields to update
             $set:{//using mongodb operator:-
-                refreshToken:undefined
+                refreshToken:1,//in order to remove/unset any field pass the flag in it as 1 so it gets unset 
             }
         },
         {
@@ -464,7 +464,7 @@ const getUserChannelProfile=asyncHandler(async(req,res)=>{
     //we may find document from the username by using the .find/.findById methods but as we've used $match etc in the db that automatically finds a single document from all the documents in the db, so we can directly use aggregation pipelines:- 
     const channel=await User.aggregate([
         {//1st pipeline
-            $match:{//how to match the document that we want 
+            $match:{//it means how to match the document that we want, it's a filter for the whole document 
                 username:username?.toLowerCase()//we've got one document via this 
             }
         },
