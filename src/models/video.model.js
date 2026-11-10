@@ -1,4 +1,4 @@
-import mongoose,{mongo, Schema} from "mongoose";
+import mongoose,{Schema} from "mongoose";
 //we'll be using the mongoose-aggregate-paginate-v2 in this file, it's used as a plugin 
 //1st step is to import it:-
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
@@ -7,10 +7,18 @@ const videoSchema=new Schema({
     videoFile:{
         type:String,//cloudnary url
         required:true,
-    },//mongodb allows us to store the small video and images files in the form of media files only but it's not a gppd practice as it puts a lot of load on the db so they're kept separately in the code
+    },//mongodb allows us to store the small video and images files in the form of media files only but it's not a good practice as it puts a lot of load on the db so they're kept separately in the code
+    videoFilePublicId: {
+        type: String, // Cloudinary public_id of the video
+        required: true,
+    },
     thumbnail:{
         type:String,
         required:true,
+    },
+    thumbnailPublicId: {
+        type: String, // Cloudinary public_id of the thumbnail
+        required: true,
     },
     title:{
         type:String,
@@ -42,5 +50,5 @@ const videoSchema=new Schema({
 //we can also add our own plugins in mongoose:-
 videoSchema.plugin(mongooseAggregatePaginate)//now we can write the aggregation querie
 
-export const Video=mongoose.Model("Video",videoSchema)
+export const Video=mongoose.model("Video",videoSchema)
 

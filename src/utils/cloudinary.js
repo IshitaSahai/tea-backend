@@ -47,11 +47,13 @@ import fs from "fs"//it's the file system, in node we get a file system, and we 
     try {
         if (!publicId) return null;
 
-        const response = await cloudinary.uploader.destroy(publicId);
+        const response = await cloudinary.uploader.destroy(publicId, {
+            resource_type: resourceType
+        });;//specifying the resource of the file type that we're trying to upload 
 
         return response;
     } catch (error) {
-        console.log("Error deleting image from Cloudinary:", error);
+        console.log("Error deleting file from Cloudinary:", error);
         return null;
     }
 };
